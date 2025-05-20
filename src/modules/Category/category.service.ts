@@ -2,6 +2,7 @@ import AppError from '../../errors/AppError';
 import { prisma } from '../../prisma/client';
 import { ICategory } from './category.interface';
 import { PrismaQueryBuilder } from '../../builder/QueryBuilder';
+import { deleteFromDigitalOceanAWS } from '../../utils/sendImageToCloudinary';
 
 const createCategory = async (payload: ICategory) => {
   const isExist = await prisma.category.findFirst({
@@ -89,6 +90,10 @@ const deleteCategory = async (id: string) => {
 
   if (!isExist) {
     throw new AppError(400, 'Category not found');
+  }
+
+  if (isExist.imageUrl) {
+    await deleteFromDigitalOceanAWS(isExist.imageUrl);
   }
 
   const result = await prisma.category.delete({

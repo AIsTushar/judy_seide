@@ -27,14 +27,45 @@ model User {
 }
 
 model Category {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String   @unique
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
   imageUrl  String
   published Boolean
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Product   Product[]
+
+  @@map("categories")
+}
+
+model Material {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Product   Product[]
+
+  @@map("materials")
+}
+
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  price       Float
+  description String
+  imageUrl    String[]
+  size        String
+  quantity    Int
+  materialId  String   @db.ObjectId
+  categoryId  String   @db.ObjectId
+
+  material Material @relation(fields: [materialId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("categories")
+  @@map("products")
 }
 
 model Blog {
