@@ -28,6 +28,7 @@ router.post(
 );
 router.post('/refresh-token', AuthController.refreshToken);
 router.post('/resend-verify-email-token', AuthController.resendVerifyEmail);
+// router.post("/social-login", AuthController.socialLogin);
 router.post('/make-admin', AuthController.makeAdmin);
 
 export const AuthRoutes = router;

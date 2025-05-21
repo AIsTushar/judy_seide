@@ -5,6 +5,7 @@ import { BlogRoutes } from '../modules/Blog/blog.routes';
 import { ContactRoutes } from '../modules/contact/contact.routes';
 import { MaterialRoutes } from '../modules/Material/material.routes';
 import { ProductRoutes } from '../modules/Product/product.routes';
+import { UserRoutes } from '../modules/User/user.routes';
 
 const router = express.Router();
 
@@ -32,6 +33,10 @@ const moduleRoutes = [
   {
     path: '/contact',
     route: ContactRoutes,
+  },
+  {
+    path: '/user',
+    route: UserRoutes,
   },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
