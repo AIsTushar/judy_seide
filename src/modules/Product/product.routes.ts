@@ -11,14 +11,17 @@ router.post(
   ProductController.createProduct,
 );
 router.get('/get-all-products', ProductController.getAllProducts);
-router.get('/get-product/:id', (req, res) => {
-  res.send('get product');
-});
-router.patch('/update-product/:id', (req, res) => {
-  res.send('update product');
-});
-router.delete('/delete-product/:id', (req, res) => {
-  res.send('delete product');
-});
+router.get('/get-product/:id', ProductController.getProduct);
+router.patch(
+  '/update-product/:id',
+  auth('ADMIN'),
+  upload.array('images'),
+  ProductController.updateProduct,
+);
+router.delete(
+  '/delete-product/:id',
+  auth('ADMIN'),
+  ProductController.deleteProduct,
+);
 
 export const ProductRoutes = router;

@@ -1,3 +1,4 @@
+import AppError from '../../errors/AppError';
 import catchAsync from '../../utils/catchAsync';
 import { uploadToDigitalOceanAWS } from '../../utils/sendImageToCloudinary';
 import sendResponse from '../../utils/sendResponse';
@@ -61,4 +62,89 @@ const getAllProducts = catchAsync(async (req, res) => {
   });
 });
 
-export const ProductController = { createProduct, getAllProducts };
+const getProduct = catchAsync(async (req, res) => {
+  const result = await ProductServices.getProduct(req.params.id);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok
+      ? 'Product Fetched Successfully'
+      : 'Product Fetching Failed, No Product Found With This ID',
+    Data: isok ? result : [],
+  });
+});
+
+const updateProduct = catchAsync(async (req, res) => {
+  const id = req.params.id;
+  const {
+    name,
+    price,
+    description,
+    size,
+    quantity,
+    tags,
+    materialId,
+    categoryId,
+  } = req.body;
+
+  let imageUrlsToKeep = [];
+  if (req.body.imageUrlsToKeep && req.body.imageUrlsToKeep.length != 0) {
+    try {
+      imageUrlsToKeep = JSON.parse(req.body.imageUrlsToKeep);
+    } catch {
+      throw new AppError(400, 'Invalid imagesToKeep format');
+    }
+  }
+
+  // Upload new images
+  let newImageUrls: string[] = [];
+  if (req.files && Array.isArray(req.files)) {
+    const uploadPromises = (req.files as Express.Multer.File[]).map((file) =>
+      uploadToDigitalOceanAWS(file),
+    );
+    const uploadResults = await Promise.all(uploadPromises);
+    newImageUrls = uploadResults.map((upload) => upload.location);
+  }
+
+  const updatePayload = {
+    name,
+    price: parseFloat(price),
+    description,
+    size,
+    quantity: parseInt(quantity),
+    tags: typeof tags === 'string' ? tags.split(',') : tags,
+    materialId,
+    categoryId,
+    imageUrlsToKeep,
+    newImageUrls,
+  };
+
+  const result = await ProductServices.updateProduct(id, updatePayload);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok ? 'Product Updated Successfully' : 'Product Updation Failed',
+    Data: isok ? result : [],
+  });
+});
+
+const deleteProduct = catchAsync(async (req, res) => {
+  const result = await ProductServices.deleteProduct(req.params.id);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok ? 'Product Deleted Successfully' : 'Product Deletion Failed',
+    Data: isok ? result : [],
+  });
+});
+
+export const ProductController = {
+  createProduct,
+  getAllProducts,
+  getProduct,
+  updateProduct,
+  deleteProduct,
+};
