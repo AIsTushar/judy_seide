@@ -141,6 +141,16 @@ const makeAdmin = catchAsync(async (req, res) => {
     Data: isok ? result : [],
   });
 });
+const socialLogin = catchAsync(async (req, res) => {
+  const result = await AuthServices.socialLogin(req.body);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok,
+    message: isok ? 'Login Successfull' : 'Login Failed',
+    Data: isok ? result : [],
+  });
+});
 
 export const AuthController = {
   register,
@@ -152,4 +162,5 @@ export const AuthController = {
   refreshToken,
   resendVerifyEmail,
   makeAdmin,
+  socialLogin,
 };

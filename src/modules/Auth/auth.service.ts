@@ -24,6 +24,10 @@ const register = async (payload: IUser) => {
     throw new AppError(400, 'User already exists with this email');
   }
 
+  if (!payload.password) {
+    throw new AppError(400, 'Password is required');
+  }
+
   // Hash the password
   const password = await bcrypt.hash(
     payload.password,
@@ -144,7 +148,7 @@ const login = async (payload: ILoginUser) => {
 
   const isPasswordMatched: boolean = await bcrypt.compare(
     payload.password,
-    user.password,
+    user?.password!,
   );
 
   if (!isPasswordMatched) {
@@ -265,10 +269,13 @@ const changePassword = async (
   if (!user) {
     throw new AppError(400, 'User not found with this email');
   }
+  if (!user.password) {
+    throw new AppError(400, 'Password is required');
+  }
 
   const isPasswordMatched: boolean = await bcrypt.compare(
     oldPassword,
-    user.password,
+    user?.password!,
   );
 
   if (!isPasswordMatched) {
@@ -398,6 +405,69 @@ const makeAdmin = async (payload: IMakeAdmin) => {
   return result;
 };
 
+const socialLogin = async (payload: { email: string; name: string }) => {
+  const userExist = await prisma.user.findUnique({
+    where: {
+      email: payload.email,
+    },
+  });
+
+  if (!userExist) {
+    const result = await prisma.user.create({
+      data: {
+        name: payload.name,
+        email: payload.email,
+        isVerified: true,
+      },
+    });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: payload.email,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      password: true,
+      role: true,
+      isVerified: true,
+      imageUrl: true,
+    },
+  });
+
+  if (!user) {
+    throw new AppError(400, 'User not found with this email');
+  }
+
+  const JwtPayload = {
+    email: user.email,
+    userId: user?.id,
+    role: user.role,
+  };
+
+  //create toke and send to the client
+  const accessToken = createToken(
+    JwtPayload,
+    config.access_token_secret as string,
+    config.access_token_expires as string,
+  );
+
+  //refresh token
+  const refreshToken = createToken(
+    JwtPayload,
+    config.refressh_token_secret as string,
+    config.refresh_token_expires as string,
+  );
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
+};
+
 export const AuthServices = {
   register,
   verifyEmail,
@@ -408,4 +478,5 @@ export const AuthServices = {
   refreshToken,
   resendVerifyEmail,
   makeAdmin,
+  socialLogin,
 };
