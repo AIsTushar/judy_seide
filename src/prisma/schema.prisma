@@ -68,6 +68,7 @@ model Product {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  orderId   String?  @db.ObjectId
 
   @@map("products")
 }
@@ -78,6 +79,7 @@ model Order {
   customerId String      @db.ObjectId
   method     String // e.g. "Cash", "Card", "Stripe"
   amount     Float
+  cartItems  Json
   status     OrderStatus @default(PROCESSING)
 
   customer User @relation(fields: [customerId], references: [id])

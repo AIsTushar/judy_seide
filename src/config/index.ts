@@ -5,6 +5,7 @@ export default {
   port: process.env.PORT,
   salt_round: process.env.SALT_ROUND,
   stripe_api_secret: process.env.STRIPE_SECRET_KEY,
+  client_url: process.env.CLIENT_URL,
   brevo: {
     api_key: process.env.BREVO_API_KEY || '',
   },

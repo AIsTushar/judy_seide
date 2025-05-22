@@ -1,7 +1,11 @@
+import Stripe from 'stripe';
 import stripe from '../../config/stripe';
 import AppError from '../../errors/AppError';
 import { prisma } from '../../prisma/client';
 import catchAsync from '../../utils/catchAsync';
+import { PaymentServices } from './payment.service';
+import config from '../../config';
+import sendResponse from '../../utils/sendResponse';
 
 const createCheckoutSession = catchAsync(async (req, res) => {
   const cartItems = req.body.cart;
@@ -55,8 +59,8 @@ const createCheckoutSession = catchAsync(async (req, res) => {
     payment_method_types: ['card'],
     mode: 'payment',
     customer_email: user?.email,
-    success_url: `http://localhost:3000/success`,
-    cancel_url: `http://localhost:3000/cancel`,
+    success_url: `${config.client_url}/success`,
+    cancel_url: `${config.client_url}/cancel`,
     line_items,
     metadata: {
       userId,
@@ -64,8 +68,24 @@ const createCheckoutSession = catchAsync(async (req, res) => {
     },
   });
 
-  res.status(200).json({ status: 'success', session });
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Checkout Session Created Successfully',
+    Data: { url: session.url },
+  });
 });
-const webhook = () => {};
+
+// Webhook
+const webhook = catchAsync(async (req, res) => {
+  console.log('webhook called!!');
+  const event = req.body as Stripe.Event;
+  if (event.type === 'checkout.session.completed') {
+    await PaymentServices.handleCheckoutSessionCompleted(
+      event.data.object as Stripe.Checkout.Session,
+    );
+  }
+  res.status(200).json({ status: 'success' });
+});
 
 export const PaymentController = { createCheckoutSession, webhook };
