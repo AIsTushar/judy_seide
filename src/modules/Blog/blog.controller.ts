@@ -62,7 +62,10 @@ const getBlog = catchAsync(async (req, res) => {
 const updateBlog = catchAsync(async (req, res) => {
   const blogId = req.params.id;
 
-  const existingBlog = await BlogServices.getBlog(blogId);
+  const existingBlog = await prisma.blog.findUnique({
+    where: { id: blogId },
+  });
+
   if (!existingBlog) {
     throw new AppError(404, 'Blog not found');
   }
@@ -71,8 +74,8 @@ const updateBlog = catchAsync(async (req, res) => {
 
   // Handle image update
   if (req.file) {
-    if (existingBlog.imageUrl) {
-      await deleteFromDigitalOceanAWS(existingBlog.imageUrl);
+    if (existingBlog?.imageUrl) {
+      await deleteFromDigitalOceanAWS(existingBlog?.imageUrl);
     }
 
     const uploadResult = await uploadToDigitalOceanAWS(req.file);

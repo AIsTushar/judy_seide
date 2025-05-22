@@ -1,5 +1,7 @@
 import { PrismaQueryBuilder } from '../../builder/QueryBuilder';
+import AppError from '../../errors/AppError';
 import { prisma } from '../../prisma/client';
+import { deleteFromDigitalOceanAWS } from '../../utils/sendImageToCloudinary';
 import { IBlog } from './blog.interface';
 
 const createBlog = async (payload: IBlog) => {
@@ -50,12 +52,34 @@ const getAllBlogs = async (queryParams: Record<string, unknown>) => {
 };
 
 const getBlog = async (id: string) => {
-  const result = await prisma.blog.findUnique({
+  const blog = await prisma.blog.findUnique({
+    where: { id },
+    include: { user: true },
+  });
+
+  if (!blog) return null;
+
+  const relatedBlogs = await prisma.blog.findMany({
     where: {
-      id,
+      userId: blog.userId,
+      NOT: { id },
+    },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      imageUrl: true,
+    },
+    take: 8,
+    orderBy: {
+      createdAt: 'desc',
     },
   });
-  return result;
+
+  return {
+    blog,
+    relatedBlogs,
+  };
 };
 
 const updateBlog = async (id: string, payload: IBlog) => {
@@ -74,6 +98,18 @@ const updateBlog = async (id: string, payload: IBlog) => {
 };
 
 const deleteBlog = async (id: string) => {
+  const blog = await prisma.blog.findUnique({
+    where: {
+      id,
+    },
+  });
+
+  if (!blog) throw new AppError(404, 'Blog not found');
+
+  if (blog.imageUrl) {
+    await deleteFromDigitalOceanAWS(blog.imageUrl);
+  }
+
   const result = await prisma.blog.delete({
     where: {
       id,

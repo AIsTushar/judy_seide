@@ -1,24 +1,42 @@
+import { PrismaQueryBuilder } from '../../builder/QueryBuilder';
 import config from '../../config';
 import AppError from '../../errors/AppError';
 import { prisma } from '../../prisma/client';
 import bcrypt from 'bcrypt';
 
-const getAllUsers = async (id: string) => {
-  const result = await prisma.user.findMany({
-    where: {
-      NOT: {
-        id,
-      },
-    },
-    select: {
+const getAllUsers = async (
+  id: string,
+  queryParams: Record<string, unknown>,
+) => {
+  const queryBuilder = new PrismaQueryBuilder(queryParams, ['name']);
+  queryBuilder.buildWhere().buildSort().buildPagination().buildSelect();
+
+  // Get the generated query object
+  const prismaQuery = queryBuilder.getQuery();
+
+  // Merge NOT condition into the existing where clause
+  prismaQuery.where = {
+    AND: [prismaQuery.where || {}, { NOT: { id } }],
+  };
+
+  // Ensure select fields fallback if not defined by client
+  if (!prismaQuery.select) {
+    prismaQuery.select = {
       name: true,
       email: true,
       contact: true,
       imageUrl: true,
       address: true,
-    },
-  });
-  return result;
+    };
+  }
+
+  const result = await prisma.user.findMany(prismaQuery);
+  const meta = await queryBuilder.getPaginationMeta(prisma.user);
+
+  return {
+    meta,
+    data: result,
+  };
 };
 
 const getUser = async (id: string) => {

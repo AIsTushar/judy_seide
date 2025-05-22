@@ -24,6 +24,7 @@ model User {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
   Blog                    Blog[]
+  Order                   Order[]
 
   @@map("users")
 }
@@ -71,6 +72,22 @@ model Product {
   @@map("products")
 }
 
+model Order {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderTime  DateTime    @default(now())
+  customerId String      @db.ObjectId
+  method     String // e.g. "Cash", "Card", "Stripe"
+  amount     Float
+  status     OrderStatus @default(PROCESSING)
+
+  customer User @relation(fields: [customerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
 model Blog {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   title     String
@@ -88,4 +105,10 @@ model Blog {
 enum Role {
   USER
   ADMIN
+}
+
+enum OrderStatus {
+  CANCEL
+  PROCESSING
+  DELIVERED
 }

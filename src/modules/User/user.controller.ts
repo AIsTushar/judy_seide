@@ -8,7 +8,7 @@ import {
 import { UserServices } from './user.service';
 
 const getAllUsers = catchAsync(async (req, res) => {
-  const result = await UserServices.getAllUsers(req.user.id);
+  const result = await UserServices.getAllUsers(req.user.id, req.query);
 
   const isok = result ? true : false;
   res.status(isok ? 200 : 400).json({
