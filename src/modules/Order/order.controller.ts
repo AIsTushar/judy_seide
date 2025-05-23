@@ -1,4 +1,5 @@
 import catchAsync from '../../utils/catchAsync';
+import sendResponse from '../../utils/sendResponse';
 import { OrderServices } from './order.service';
 
 const getAllOrders = catchAsync(async (req, res) => {
@@ -23,4 +24,17 @@ const getUserOrders = catchAsync(async (req, res) => {
   });
 });
 
-export const OrderController = { getAllOrders, getUserOrders };
+const getMyOrders = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const result = await OrderServices.getMyOrders(userId);
+  const isok = result ? true : false;
+
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok ? 'Orders fatched successfully!' : 'Orders Fatching Failed',
+    Data: isok ? result : [],
+  });
+});
+
+export const OrderController = { getAllOrders, getUserOrders, getMyOrders };

@@ -127,4 +127,22 @@ const getUserOrders = async (
   };
 };
 
-export const OrderServices = { getAllOrders, getUserOrders };
+const getMyOrders = async (userId: string) => {
+  const result = await prisma.order.findMany({
+    where: {
+      customerId: userId,
+    },
+    include: {
+      customer: {
+        select: {
+          id: true,
+          name: true,
+          imageUrl: true,
+        },
+      },
+    },
+  });
+  return result;
+};
+
+export const OrderServices = { getAllOrders, getUserOrders, getMyOrders };

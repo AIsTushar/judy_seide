@@ -4,4 +4,5 @@ export interface IBlog {
   content: string;
   imageUrl: string;
   others?: string;
+  isPublish?: boolean;
 }

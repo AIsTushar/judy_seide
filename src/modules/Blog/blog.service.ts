@@ -32,6 +32,7 @@ const getAllBlogs = async (queryParams: Record<string, unknown>) => {
 
   const blogs = await prisma.blog.findMany({
     ...prismaQuery,
+    where: { isPublish: true },
     include: {
       user: {
         select: {
@@ -53,7 +54,7 @@ const getAllBlogs = async (queryParams: Record<string, unknown>) => {
 
 const getBlog = async (id: string) => {
   const blog = await prisma.blog.findUnique({
-    where: { id },
+    where: { id, isPublish: true },
     include: { user: true },
   });
 
@@ -92,6 +93,7 @@ const updateBlog = async (id: string, payload: IBlog) => {
       content: payload.content,
       imageUrl: payload.imageUrl,
       others: payload.others,
+      isPublish: payload.isPublish,
     },
   });
   return result;
