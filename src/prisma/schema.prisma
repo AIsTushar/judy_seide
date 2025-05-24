@@ -84,6 +84,7 @@ model Order {
   email      String
   address    String
   amount     Float
+  isPaid     Boolean
   cartItems  Json
   status     OrderStatus @default(PROCESSING)
   customer   User        @relation(fields: [customerId], references: [id])
