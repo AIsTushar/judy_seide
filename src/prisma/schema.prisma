@@ -61,6 +61,7 @@ model Product {
   size        String
   quantity    Int
   tags        String[]
+  published   Boolean  @default(false)
   materialId  String   @db.ObjectId
   categoryId  String   @db.ObjectId
 
@@ -80,6 +81,8 @@ model Order {
   orderTime  DateTime    @default(now())
   customerId String      @db.ObjectId
   method     String
+  email      String
+  address    String
   amount     Float
   cartItems  Json
   status     OrderStatus @default(PROCESSING)

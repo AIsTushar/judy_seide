@@ -26,7 +26,7 @@ const getUserOrders = catchAsync(async (req, res) => {
 
 const getMyOrders = catchAsync(async (req, res) => {
   const userId = req.user.id;
-  const result = await OrderServices.getMyOrders(userId);
+  const result = await OrderServices.getMyOrders(userId, req.query);
   const isok = result ? true : false;
 
   sendResponse(res, {
@@ -37,4 +37,22 @@ const getMyOrders = catchAsync(async (req, res) => {
   });
 });
 
-export const OrderController = { getAllOrders, getUserOrders, getMyOrders };
+const getMyOrderByID = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  console.log('req.params.id', req.params.id);
+  const result = await OrderServices.getMyOrder(userId, req.params.id);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok ? 'Order Fetched Successfully' : 'Order Fetching Failed',
+    Data: isok ? result : [],
+  });
+});
+
+export const OrderController = {
+  getAllOrders,
+  getUserOrders,
+  getMyOrders,
+  getMyOrderByID,
+};

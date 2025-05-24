@@ -12,6 +12,11 @@ router.post(
 );
 
 router.get('/get-all-categories', CategoryController.getAllCategories);
+router.get(
+  '/get-all-categories/admin',
+  auth('ADMIN'),
+  CategoryController.getAllCategoriesAdmin,
+);
 router.get('/get-category/:id', CategoryController.getCategory);
 
 router.patch(

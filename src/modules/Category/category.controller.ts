@@ -49,6 +49,19 @@ const getAllCategories = catchAsync(async (req, res) => {
   });
 });
 
+const getAllCategoriesAdmin = catchAsync(async (req, res) => {
+  const result = await CategoryServices.getAllCategoriesAdmin(req.query);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok
+      ? 'Categories Fetched Successfully'
+      : 'Categories Fetching Failed',
+    Data: isok ? result : [],
+  });
+});
+
 const getCategory = catchAsync(async (req, res) => {
   const result = await CategoryServices.getCategory(req.params.id);
   const isok = result ? true : false;
@@ -78,8 +91,6 @@ const updateCategory = catchAsync(async (req, res) => {
     const uploadResult = await uploadToDigitalOceanAWS(req.file);
     updatedData.imageUrl = uploadResult.location;
   }
-
-  updatedData.published = req.body.published === 'true' ? true : false;
 
   const result = await CategoryServices.updateCategory(
     req.params.id,
@@ -112,6 +123,7 @@ const deleteCategory = catchAsync(async (req, res) => {
 export const CategoryController = {
   createCategory,
   getAllCategories,
+  getAllCategoriesAdmin,
   getCategory,
   updateCategory,
   deleteCategory,

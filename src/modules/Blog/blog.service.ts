@@ -52,6 +52,40 @@ const getAllBlogs = async (queryParams: Record<string, unknown>) => {
   };
 };
 
+// --- Admin --- Get All Blogs with ispublished = false and isdeleted = true
+const getAllBlogsAdmin = async (queryParams: Record<string, unknown>) => {
+  const queryBuilder = new PrismaQueryBuilder(queryParams, [
+    'title',
+    'content',
+  ]);
+  const prismaQuery = queryBuilder
+    .buildWhere()
+    .buildSort()
+    .buildPagination()
+    .buildSelect()
+    .getQuery();
+
+  const blogs = await prisma.blog.findMany({
+    ...prismaQuery,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          imageUrl: true,
+        },
+      },
+    },
+  });
+
+  const meta = await queryBuilder.getPaginationMeta(prisma.blog);
+
+  return {
+    meta,
+    data: blogs,
+  };
+};
+
 const getBlog = async (id: string) => {
   const blog = await prisma.blog.findUnique({
     where: { id, isPublish: true },
@@ -123,6 +157,7 @@ const deleteBlog = async (id: string) => {
 export const BlogServices = {
   createBlog,
   getAllBlogs,
+  getAllBlogsAdmin,
   getBlog,
   updateBlog,
   deleteBlog,

@@ -62,6 +62,19 @@ const getAllProducts = catchAsync(async (req, res) => {
   });
 });
 
+const getAllProductsAdmin = catchAsync(async (req, res) => {
+  const result = await ProductServices.getAllProductsAdmin(req.query);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok
+      ? 'Products Fetched Successfully'
+      : 'Products Fetching Failed',
+    Data: isok ? result : [],
+  });
+});
+
 const getProduct = catchAsync(async (req, res) => {
   const result = await ProductServices.getProduct(req.params.id);
   const isok = result ? true : false;
@@ -86,6 +99,7 @@ const updateProduct = catchAsync(async (req, res) => {
     tags,
     materialId,
     categoryId,
+    published,
   } = req.body;
 
   let imageUrlsToKeep = [];
@@ -118,6 +132,7 @@ const updateProduct = catchAsync(async (req, res) => {
     categoryId,
     imageUrlsToKeep,
     newImageUrls,
+    published,
   };
 
   const result = await ProductServices.updateProduct(id, updatePayload);
@@ -147,4 +162,5 @@ export const ProductController = {
   getProduct,
   updateProduct,
   deleteProduct,
+  getAllProductsAdmin,
 };

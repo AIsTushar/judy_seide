@@ -35,6 +35,27 @@ const getAllCategories = async (queryParams: Record<string, unknown>) => {
     .getQuery();
   const categories = await prisma.category.findMany({
     ...prismaQuery,
+    where: { published: true },
+  });
+
+  const meta = await queryBuilder.getPaginationMeta(prisma.category);
+
+  return {
+    meta,
+    data: categories,
+  };
+};
+
+const getAllCategoriesAdmin = async (queryParams: Record<string, unknown>) => {
+  const queryBuilder = new PrismaQueryBuilder(queryParams, ['name']);
+  const prismaQuery = queryBuilder
+    .buildWhere()
+    .buildSort()
+    .buildPagination()
+    .buildSelect()
+    .getQuery();
+  const categories = await prisma.category.findMany({
+    ...prismaQuery,
   });
 
   const meta = await queryBuilder.getPaginationMeta(prisma.category);
@@ -107,6 +128,7 @@ const deleteCategory = async (id: string) => {
 export const CategoryServices = {
   createCategory,
   getAllCategories,
+  getAllCategoriesAdmin,
   getCategory,
   updateCategory,
   deleteCategory,

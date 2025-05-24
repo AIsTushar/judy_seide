@@ -127,9 +127,54 @@ const getUserOrders = async (
   };
 };
 
-const getMyOrders = async (userId: string) => {
-  const result = await prisma.order.findMany({
+const getMyOrders = async (
+  userId: string,
+  queryParams: Record<string, unknown>,
+) => {
+  // Extend query builder with searchable order ID
+  const queryBuilder = new PrismaQueryBuilder(queryParams, ['id']);
+
+  // Build full query (where + sort + pagination)
+  const prismaQuery = queryBuilder
+    .buildWhere()
+    .buildSort()
+    .buildPagination()
+    .getQuery();
+
+  // Inject user-based filter (customerId)
+  prismaQuery.where = {
+    ...prismaQuery.where,
+    customerId: userId,
+  };
+
+  // Include customer details
+  prismaQuery.include = {
+    customer: {
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+      },
+    },
+  };
+
+  // Execute main query
+  const orders = await prisma.order.findMany(prismaQuery);
+
+  // Get pagination meta
+  const meta = await queryBuilder.getPaginationMeta(prisma.order);
+
+  return {
+    meta,
+    data: orders,
+  };
+};
+
+const getMyOrder = async (userId: string, orderId: string) => {
+  // Step 1: Get the order (with cartItems as JSON)
+  const order = await prisma.order.findUnique({
     where: {
+      id: orderId,
       customerId: userId,
     },
     include: {
@@ -142,7 +187,48 @@ const getMyOrders = async (userId: string) => {
       },
     },
   });
-  return result;
+
+  if (!order) return null;
+
+  // Step 2: Extract productIds from cartItems
+  const cartItems = order.cartItems as {
+    productId: string;
+    quantity: number;
+  }[];
+  const productIds = cartItems.map((item) => item.productId);
+
+  // Step 3: Fetch product details
+  const products = await prisma.product.findMany({
+    where: {
+      id: { in: productIds },
+    },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      imageUrl: true,
+    },
+  });
+
+  // Step 4: Combine cartItems with product info
+  const detailedCartItems = cartItems.map((item) => {
+    const product = products.find((p) => p.id === item.productId);
+    return {
+      ...item,
+      product,
+    };
+  });
+
+  // Step 5: Return enriched order
+  return {
+    ...order,
+    cartItems: detailedCartItems,
+  };
 };
 
-export const OrderServices = { getAllOrders, getUserOrders, getMyOrders };
+export const OrderServices = {
+  getAllOrders,
+  getUserOrders,
+  getMyOrders,
+  getMyOrder,
+};

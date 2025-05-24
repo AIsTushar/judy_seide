@@ -47,6 +47,17 @@ const getAllBlogs = catchAsync(async (req, res) => {
   });
 });
 
+const getAllBlogsAdmin = catchAsync(async (req, res) => {
+  const result = await BlogServices.getAllBlogsAdmin(req.query);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok ? 'Blogs Fetched Successfully' : 'Blogs Fetching Failed',
+    Data: isok ? result : [],
+  });
+});
+
 const getBlog = catchAsync(async (req, res) => {
   console.log(req.params.id);
   const result = await BlogServices.getBlog(req.params.id);
@@ -107,6 +118,7 @@ const deleteBlog = catchAsync(async (req, res) => {
 export const BlogController = {
   createBlog,
   getAllBlogs,
+  getAllBlogsAdmin,
   getBlog,
   updateBlog,
   deleteBlog,

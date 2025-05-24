@@ -11,6 +11,7 @@ router.post(
   ProductController.createProduct,
 );
 router.get('/get-all-products', ProductController.getAllProducts);
+router.get('/get-all-products/admin', ProductController.getAllProductsAdmin);
 router.get('/get-product/:id', ProductController.getProduct);
 router.patch(
   '/update-product/:id',
