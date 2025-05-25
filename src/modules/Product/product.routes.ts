@@ -26,5 +26,6 @@ router.delete(
 );
 
 router.get('/get-trending-products', ProductController.getTrendingProducts);
+router.get('/get-navbar-products', ProductController.getNavbarProducts);
 
 export const ProductRoutes = router;

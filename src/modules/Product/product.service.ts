@@ -1,4 +1,4 @@
-import { subDays } from 'date-fns';
+import { subDays, subMonths } from 'date-fns';
 import { PrismaQueryBuilder } from '../../builder/QueryBuilder';
 import AppError from '../../errors/AppError';
 import { prisma } from '../../prisma/client';
@@ -352,168 +352,151 @@ const deleteProduct = async (id: string) => {
   return result;
 };
 
-type QueryParams = {
-  searchTerm?: string;
-  sort?: string;
-  limit?: string;
-  page?: string;
-  fields?: string;
-  range?: 'All' | 'New';
-  [key: string]: unknown;
-};
-
 // Get Trending Products
-const getTrendingProducts = async (queryParams: QueryParams) => {
-  const isNew = queryParams.range === 'New';
-  const thirtyDaysAgo = subDays(new Date(), 30);
+const getTrendingProducts = async () => {
+  const threeMonthsAgo = subMonths(new Date(), 3);
 
-  // Step 1: Fetch paid orders, optionally filtered by the last 30 days
-  const orders = await prisma.order.findMany({
+  // Step 1: Fetch orders in the last 3 months
+  const recentOrders = await prisma.order.findMany({
     where: {
+      orderTime: {
+        gte: threeMonthsAgo,
+      },
       isPaid: true,
-      ...(isNew && { orderTime: { gte: thirtyDaysAgo } }),
     },
-    select: { cartItems: true },
+    select: {
+      cartItems: true,
+    },
   });
 
-  // Step 2: Count product sales
-  const salesMap: Record<string, number> = {};
-  orders.forEach((order) => {
-    const items = order.cartItems as Array<{
+  // Step 2: Aggregate product sales count
+  const productSales: Record<string, number> = {};
+
+  for (const order of recentOrders) {
+    const cart = order.cartItems as Array<{
       productId: string;
       quantity: number;
     }>;
-
-    items.forEach(({ productId, quantity }) => {
-      salesMap[productId] = (salesMap[productId] || 0) + quantity;
-    });
-  });
-
-  // Step 3: Sort product IDs by sales volume
-  const sortedProductIds = Object.entries(salesMap)
-    .sort(([, a], [, b]) => b - a)
-    .map(([productId]) => productId);
-
-  if (sortedProductIds.length === 0) {
-    return {
-      meta: {
-        total: 0,
-        totalPage: 0,
-        page: 1,
-        limit: Number(queryParams.limit) || 10,
-      },
-      data: [],
-    };
-  }
-
-  // Step 4: Build base filters (excluding pagination, sort, and invalid fields)
-  const { searchTerm, sort, limit, page, fields, range, ...filters } =
-    queryParams;
-
-  let baseWhere: any = {
-    id: { in: sortedProductIds },
-    published: true,
-  };
-
-  // Apply search term filter - try different approaches for MongoDB compatibility
-  if (searchTerm) {
-    try {
-      baseWhere.OR = [
-        { name: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } },
-        { tags: { hasSome: [searchTerm] } }, // For arrays in MongoDB
-      ];
-    } catch (error) {
-      // Fallback for older Prisma versions or different MongoDB setups
-      baseWhere.OR = [
-        { name: { contains: searchTerm } },
-        { description: { contains: searchTerm } },
-        { tags: { has: searchTerm } },
-      ];
+    for (const item of cart) {
+      if (item?.productId) {
+        productSales[item.productId] =
+          (productSales[item.productId] || 0) + item.quantity;
+      }
     }
   }
 
-  // Apply additional filters
-  if (Object.keys(filters).length) {
-    baseWhere = { ...baseWhere, ...filters };
-  }
+  // Step 3: Sort productIds by quantity sold
+  const sortedProductIds = Object.entries(productSales)
+    .sort((a, b) => b[1] - a[1]) // descending order
+    .map(([productId]) => productId);
 
-  // Step 5: Get total count for pagination (simplified for MongoDB compatibility)
-  let total: number;
-  try {
-    total = await prisma.product.count({ where: baseWhere });
-  } catch (error) {
-    // If count fails, get all matching products and count them
-    const allProducts = await prisma.product.findMany({
-      where: baseWhere,
-      select: { id: true },
-    });
-    total = allProducts.length;
-  }
+  // Optional: limit top N trending products
+  const topProductIds = sortedProductIds.slice(0, 10);
 
-  if (total === 0) {
-    return {
-      meta: {
-        total: 0,
-        totalPage: 0,
-        page: 1,
-        limit: Number(queryParams.limit) || 10,
-      },
-      data: [],
-    };
-  }
-
-  // Step 6: Apply pagination
-  const pageNum = Number(queryParams.page) || 1;
-  const limitNum = Number(queryParams.limit) || 10;
-  const skip = (pageNum - 1) * limitNum;
-
-  // Step 7: Fetch all matching products (we'll handle ordering manually)
-  const allMatchingProducts = await prisma.product.findMany({
-    where: baseWhere,
-    include: {
-      category: true,
-      material: true,
+  // Step 4: Get full product details
+  const trendingProducts = await prisma.product.findMany({
+    where: {
+      id: { in: topProductIds },
     },
   });
 
-  // Step 8: Sort products by sales volume (maintain the trending order)
-  const productSalesOrder = new Map(
-    sortedProductIds.map((id, index) => [id, index]),
-  );
-  const sortedProducts = allMatchingProducts.sort((a, b) => {
-    const orderA = productSalesOrder.get(a.id) ?? Infinity;
-    const orderB = productSalesOrder.get(b.id) ?? Infinity;
-    return orderA - orderB;
+  // Optional: Return with sales count info
+  const trendingWithSales = trendingProducts.map((product) => ({
+    ...product,
+    totalSold: productSales[product.id] || 0,
+  }));
+
+  return trendingWithSales;
+};
+
+const getNavbarProducts = async () => {
+  const threeMonthsAgo = subMonths(new Date(), 3);
+
+  // Step 1: Fetch paid orders in last 3 months
+  const recentOrders = await prisma.order.findMany({
+    where: {
+      orderTime: { gte: threeMonthsAgo },
+      isPaid: true,
+    },
+    select: {
+      cartItems: true,
+    },
   });
 
-  // Step 9: Apply pagination to sorted results
-  const paginatedProducts = sortedProducts.slice(skip, skip + limitNum);
+  // Step 2: Build product sales map
+  const productSales: Record<string, number> = {};
 
-  // Step 10: Group products by category
-  const categoryMap: Record<string, { category: any; products: any[] }> = {};
-  paginatedProducts.forEach((product) => {
-    const categoryId = product.category.id;
-    if (!categoryMap[categoryId]) {
-      categoryMap[categoryId] = {
-        category: product.category,
-        products: [],
-      };
+  for (const order of recentOrders) {
+    const cart = order.cartItems as Array<{
+      productId: string;
+      quantity: number;
+    }>;
+    for (const item of cart) {
+      if (item?.productId) {
+        productSales[item.productId] =
+          (productSales[item.productId] || 0) + item.quantity;
+      }
     }
-    categoryMap[categoryId].products.push(product);
+  }
+
+  const allProductIds = Object.keys(productSales);
+
+  // Step 3: Fetch product info with category
+  const products = await prisma.product.findMany({
+    where: {
+      id: { in: allProductIds },
+      published: true,
+    },
+    include: {
+      category: true,
+    },
   });
 
-  // Step 11: Return grouped results with pagination meta
-  const result = Object.values(categoryMap);
-  const totalPage = Math.ceil(total / limitNum);
-  const meta = {
-    total,
-    totalPage,
-    page: pageNum,
-    limit: limitNum,
-  };
+  // Use proper object array in categoryWise
+  const categoryWise: Record<string, { name: string; sold: number }[]> = {};
+  const overallList: Array<{ name: string; totalSold: number }> = [];
 
-  return { meta, data: result };
+  for (const product of products) {
+    const sold = productSales[product.id] || 0;
+    const catName = product.category.name;
+
+    if (!categoryWise[catName]) {
+      categoryWise[catName] = [];
+    }
+
+    categoryWise[catName].push({ name: product.name, sold });
+    overallList.push({ name: product.name, totalSold: sold });
+  }
+
+  // Step 4: Fetch all published categories
+  const publishedCategories = await prisma.category.findMany({
+    where: { published: true },
+  });
+
+  const trendingByCategory: Record<string, string[]> = {};
+
+  for (const category of publishedCategories) {
+    const catName = category.name;
+    const productsInCategory = categoryWise[catName] || [];
+
+    const topNames = productsInCategory
+      .sort((a, b) => b.sold - a.sold)
+      .slice(0, 3)
+      .map((p) => p.name);
+
+    trendingByCategory[catName] = topNames;
+  }
+
+  // Step 5: Build overall top products list
+  const overallTrending = overallList
+    .sort((a, b) => b.totalSold - a.totalSold)
+    .slice(0, 3)
+    .map((p) => p.name);
+
+  return {
+    trendingByCategory,
+    overallTrending,
+  };
 };
 
 export const ProductServices = {
@@ -524,4 +507,5 @@ export const ProductServices = {
   deleteProduct,
   getAllProductsAdmin,
   getTrendingProducts,
+  getNavbarProducts,
 };

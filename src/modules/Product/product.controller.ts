@@ -162,8 +162,9 @@ const deleteProduct = catchAsync(async (req, res) => {
   });
 });
 
+// Get Trending Products In Home Page
 const getTrendingProducts = catchAsync(async (req, res) => {
-  const result = await ProductServices.getTrendingProducts(req.query);
+  const result = await ProductServices.getTrendingProducts();
   const isok = result ? true : false;
   sendResponse(res, {
     statusCode: isok ? 200 : 400,
@@ -171,6 +172,19 @@ const getTrendingProducts = catchAsync(async (req, res) => {
     message: isok
       ? 'Trending Products Fetched Successfully'
       : 'Trending Products Fetching Failed',
+    Data: isok ? result : [],
+  });
+});
+
+const getNavbarProducts = catchAsync(async (req, res) => {
+  const result = await ProductServices.getNavbarProducts();
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok
+      ? 'Navbar Products Fetched Successfully'
+      : 'Navbar Products Fetching Failed',
     Data: isok ? result : [],
   });
 });
@@ -183,4 +197,5 @@ export const ProductController = {
   deleteProduct,
   getAllProductsAdmin,
   getTrendingProducts,
+  getNavbarProducts,
 };
