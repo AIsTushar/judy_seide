@@ -20,6 +20,7 @@ const createCheckoutSession = catchAsync(async (req, res) => {
   const productIds = cartItems.map(
     (item: { productId: string; quantity: number }) => item.productId,
   );
+
   const products = await prisma.product.findMany({
     where: {
       id: {
@@ -28,25 +29,38 @@ const createCheckoutSession = catchAsync(async (req, res) => {
     },
   });
 
-  if (!products) {
-    throw new AppError(404, 'Products not found');
+  if (!products || products.length !== cartItems.length) {
+    throw new AppError(404, 'Some products not found');
   }
 
-  // console.log(products);
+  // ✅ Step: Check if requested quantity is available
+  for (const item of cartItems) {
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) {
+      throw new AppError(404, `Product not found for ID: ${item.productId}`);
+    }
+    if (product.quantity < item.quantity) {
+      throw new AppError(
+        400,
+        `Insufficient stock for "${product.name}". Available: ${product.quantity}, Requested: ${item.quantity}`,
+      );
+    }
+  }
 
-  // 2. Create line_items for Stripe
+  // ✅ Step: Build Stripe line items
   const line_items = cartItems.map(
     (item: { productId: string; quantity: number }) => {
-      const product = products.find((p) => p.id === item.productId);
-      // console.log(encodeURI(product?.imageUrl[0] ?? ''));
+      const product = products.find((p) => p.id === item.productId)!;
+      console.log('product', product);
+
       return {
         price_data: {
           currency: 'usd',
-          unit_amount: product?.price! * 100,
+          unit_amount: product.price * 100,
           product_data: {
-            name: product?.name,
-            description: product?.description,
-            images: [encodeURI(product?.imageUrl?.[0] ?? '')],
+            name: product.name,
+            description: product.description,
+            images: [encodeURI(product.imageUrl?.[0] ?? '')],
           },
         },
         quantity: item.quantity,
@@ -54,7 +68,7 @@ const createCheckoutSession = catchAsync(async (req, res) => {
     },
   );
 
-  // 3. Create Stripe session
+  // ✅ Step: Create Stripe Checkout Session
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: 'payment',

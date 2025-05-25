@@ -276,6 +276,7 @@ interface UpdateProductPayload {
   newImageUrls?: string[];
 }
 
+// Update Product
 export const updateProduct = async (
   id: string,
   payload: UpdateProductPayload,
@@ -283,10 +284,30 @@ export const updateProduct = async (
   const existingProduct = await prisma.product.findUnique({ where: { id } });
   if (!existingProduct) throw new AppError(404, 'Product not found!');
 
-  const finalImageUrls = [
-    ...(payload.imageUrlsToKeep || []),
-    ...(payload.newImageUrls || []),
-  ];
+  // Initialize finalImageUrls with existing images by default
+  let finalImageUrls = existingProduct.imageUrl || [];
+
+  // Only update images if imageUrlsToKeep or newImageUrls are provided
+  const hasImageUpdate =
+    (payload.imageUrlsToKeep && payload.imageUrlsToKeep.length > 0) ||
+    (payload.newImageUrls && payload.newImageUrls.length > 0);
+
+  if (hasImageUpdate) {
+    finalImageUrls = [
+      ...(payload.imageUrlsToKeep || []),
+      ...(payload.newImageUrls || []),
+    ];
+
+    // Identify images to delete
+    const imagesToDelete = existingProduct.imageUrl.filter(
+      (url) => !finalImageUrls.includes(url),
+    );
+
+    // Delete images from DigitalOcean
+    await Promise.all(
+      imagesToDelete.map((url) => deleteFromDigitalOceanAWS(url)),
+    );
+  }
 
   const dataToUpdate: any = {
     ...(payload.name && { name: payload.name }),
@@ -299,18 +320,15 @@ export const updateProduct = async (
     ...(payload.tags && Array.isArray(payload.tags) && { tags: payload.tags }),
     ...(payload.materialId && { materialId: payload.materialId }),
     ...(payload.categoryId && { categoryId: payload.categoryId }),
-    ...(finalImageUrls.length > 0 && { imageUrl: finalImageUrls }),
     ...(typeof payload.published === 'boolean' && {
       published: payload.published,
     }),
+    // Only update imageUrl if there’s an image-related update
+    ...(hasImageUpdate &&
+      finalImageUrls.length > 0 && {
+        imageUrl: finalImageUrls,
+      }),
   };
-
-  const imagesToDelete = existingProduct.imageUrl.filter(
-    (url) => !finalImageUrls.includes(url),
-  );
-  await Promise.all(
-    imagesToDelete.map((url) => deleteFromDigitalOceanAWS(url)),
-  );
 
   const updatedProduct = await prisma.product.update({
     where: { id },
@@ -320,6 +338,7 @@ export const updateProduct = async (
   return updatedProduct;
 };
 
+// Delete Product
 const deleteProduct = async (id: string) => {
   const existingProduct = await prisma.product.findUnique({ where: { id } });
   if (!existingProduct) throw new AppError(404, 'Product not found!');
@@ -344,7 +363,6 @@ type QueryParams = {
 };
 
 // Get Trending Products
-
 const getTrendingProducts = async (queryParams: QueryParams) => {
   const isNew = queryParams.range === 'New';
   const thirtyDaysAgo = subDays(new Date(), 30);

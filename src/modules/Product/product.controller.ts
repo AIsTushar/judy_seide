@@ -103,11 +103,17 @@ const updateProduct = catchAsync(async (req, res) => {
   } = req.body;
 
   let imageUrlsToKeep = [];
-  if (req.body.imageUrlsToKeep && req.body.imageUrlsToKeep.length != 0) {
+  if (req.body.imageUrlsToKeep) {
     try {
-      imageUrlsToKeep = JSON.parse(req.body.imageUrlsToKeep);
+      imageUrlsToKeep =
+        typeof req.body.imageUrlsToKeep === 'string'
+          ? JSON.parse(req.body.imageUrlsToKeep)
+          : req.body.imageUrlsToKeep;
+      if (!Array.isArray(imageUrlsToKeep)) {
+        throw new AppError(400, 'imageUrlsToKeep must be an array');
+      }
     } catch {
-      throw new AppError(400, 'Invalid imagesToKeep format');
+      throw new AppError(400, 'Invalid imageUrlsToKeep format');
     }
   }
 
@@ -117,16 +123,17 @@ const updateProduct = catchAsync(async (req, res) => {
     const uploadPromises = (req.files as Express.Multer.File[]).map((file) =>
       uploadToDigitalOceanAWS(file),
     );
-    const uploadResults = await Promise.all(uploadPromises);
-    newImageUrls = uploadResults.map((upload) => upload.location);
+    newImageUrls = (await Promise.all(uploadPromises)).map(
+      (upload) => upload.location,
+    );
   }
 
   const updatePayload = {
     name,
-    price: parseFloat(price),
+    price: price ? parseFloat(price) : undefined,
     description,
     size,
-    quantity: parseInt(quantity),
+    quantity: quantity ? parseInt(quantity) : undefined,
     tags: typeof tags === 'string' ? tags.split(',') : tags,
     materialId,
     categoryId,
@@ -136,12 +143,11 @@ const updateProduct = catchAsync(async (req, res) => {
   };
 
   const result = await ProductServices.updateProduct(id, updatePayload);
-  const isok = result ? true : false;
   sendResponse(res, {
-    statusCode: isok ? 200 : 400,
-    success: isok ? true : false,
-    message: isok ? 'Product Updated Successfully' : 'Product Updation Failed',
-    Data: isok ? result : [],
+    statusCode: result ? 200 : 400,
+    success: !!result,
+    message: result ? 'Product Updated Successfully' : 'Product Update Failed',
+    Data: result || [],
   });
 });
 

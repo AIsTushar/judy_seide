@@ -146,3 +146,43 @@ export const CONTACT_FORM_TEMPLATE = `
 </body>
 </html>
 `;
+
+export const ORDER_CONFIRMATION_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order Confirmation</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
+    <header style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+      <h1 style="color: #4CAF50; margin: 0;">Thank You for Your Purchase!</h1>
+      <p style="margin: 5px 0; color: #777;">Order Confirmation</p>
+    </header>
+
+    <section style="padding: 20px 0;">
+      <h2 style="font-size: 1.2em; margin-bottom: 10px;">Order Details:</h2>
+      <p><strong>Email:</strong> <a href="mailto:{email}">{email}</a></p>
+      <p><strong>Shipping Address:</strong> {address}</p>
+      <p><strong>Phone:</strong> {phone}</p>
+      <p><strong>Payment Method:</strong> Stripe</p>
+      <p><strong>Total Paid:</strong> $ {amount}</p>
+    </section>
+
+    <section style="padding: 20px 0;">
+      <h2 style="font-size: 1.2em; margin-bottom: 10px;">Items Ordered:</h2>
+      <ul style="list-style: none; padding: 0;">
+        {items}
+      </ul>
+    </section>
+
+    <footer style="text-align: center; font-size: 0.9em; color: #888; padding-top: 20px; border-top: 1px solid #eee;">
+      <p>If you have any questions about your order, feel free to reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} Judy Seide. All rights reserved.</p>
+    </footer>
+  </div>
+</body>
+</html>
+`;
