@@ -67,8 +67,10 @@ const getUserOrders = async (
   id: string,
   queryParams: Record<string, unknown>,
 ) => {
+  // Extract searchTerm and rest params
   const { searchTerm, ...rest } = queryParams;
 
+  // Build base query without searchTerm filters
   const queryBuilder = new PrismaQueryBuilder(rest);
   const prismaQuery = queryBuilder
     .buildSort()
@@ -76,20 +78,112 @@ const getUserOrders = async (
     .buildSelect()
     .getQuery();
 
-  // Construct dynamic where condition
+  // Base where filter by customer
   const where: any = {
     customerId: id,
   };
 
-  // Manual filtering for product name inside cartItems
-  if (searchTerm) {
-    where.cartItems = {
-      array_contains: [
-        { name: { contains: String(searchTerm), mode: 'insensitive' } },
-      ],
+  // If there's a search term, we need to handle it specially for JSON fields
+  if (
+    searchTerm &&
+    typeof searchTerm === 'string' &&
+    searchTerm.trim() !== ''
+  ) {
+    const s = searchTerm.trim();
+
+    // Define valid OrderStatus enum values
+    const validOrderStatuses = [
+      'PENDING',
+      'PROCESSING',
+      'SHIPPED',
+      'DELIVERED',
+      'CANCELLED',
+    ];
+
+    // Build OR conditions for searchable string fields
+    const orConditions: any[] = [
+      { id: { contains: s, mode: 'insensitive' } },
+      { method: { contains: s, mode: 'insensitive' } },
+      { address: { contains: s, mode: 'insensitive' } },
+      { email: { contains: s, mode: 'insensitive' } },
+    ];
+
+    // Add status search if the search term matches a valid enum value
+    const matchingStatus = validOrderStatuses.find(
+      (status) => status.toLowerCase() === s.toLowerCase(),
+    );
+
+    if (matchingStatus) {
+      orConditions.push({ status: { equals: matchingStatus } });
+    }
+
+    // For searching in cartItems, we'll need to do it post-query
+    // First, get all orders for this customer
+    const allOrders = await prisma.order.findMany({
+      where: { customerId: id },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+          },
+        },
+      },
+      orderBy: prismaQuery.orderBy,
+    });
+
+    // Filter orders that match the search term
+    const filteredOrders = allOrders.filter((order) => {
+      // Check string fields
+      const stringFieldsMatch =
+        order.id.toLowerCase().includes(s.toLowerCase()) ||
+        order.method.toLowerCase().includes(s.toLowerCase()) ||
+        order.address.toLowerCase().includes(s.toLowerCase()) ||
+        order.email.toLowerCase().includes(s.toLowerCase()) ||
+        (matchingStatus && order.status === matchingStatus);
+
+      // Check if search term matches any product name in cartItems
+      const cartItemsMatch =
+        Array.isArray(order.cartItems) &&
+        order.cartItems.some(
+          (item: any) =>
+            item.name && item.name.toLowerCase().includes(s.toLowerCase()),
+        );
+
+      return stringFieldsMatch || cartItemsMatch;
+    });
+
+    // Apply pagination manually
+    const skip = prismaQuery.skip || 0;
+    const take = prismaQuery.take || 10;
+    const paginatedOrders = filteredOrders.slice(skip, skip + take);
+
+    // Calculate totals for filtered results
+    const totalOrders = filteredOrders.length;
+    const totalAmount = filteredOrders.reduce(
+      (sum, order) => sum + order.amount,
+      0,
+    );
+
+    // Calculate pagination meta
+    const totalPages = Math.ceil(totalOrders / take);
+    const currentPage = Math.floor(skip / take) + 1;
+
+    return {
+      meta: {
+        total: totalOrders,
+        totalPage: totalPages,
+        page: currentPage,
+        limit: take,
+      },
+      totalOrders,
+      totalAmount,
+      data: paginatedOrders,
     };
   }
 
+  // If no search term, use the regular database query
   const orders = await prisma.order.findMany({
     ...prismaQuery,
     where,
@@ -104,7 +198,7 @@ const getUserOrders = async (
     },
   });
 
-  // Get total count & total amount
+  // Get total count and total amount matching filters
   const [totalOrders, totalAmount] = await Promise.all([
     prisma.order.count({ where }),
     prisma.order.aggregate({
@@ -115,6 +209,7 @@ const getUserOrders = async (
     }),
   ]);
 
+  // Get pagination meta using PrismaQueryBuilder helper
   const meta = await queryBuilder.getPaginationMeta({
     count: (args: any) => prisma.order.count({ ...args, where }),
   });
