@@ -156,6 +156,19 @@ const deleteProduct = catchAsync(async (req, res) => {
   });
 });
 
+const getTrendingProducts = catchAsync(async (req, res) => {
+  const result = await ProductServices.getTrendingProducts(req.query);
+  const isok = result ? true : false;
+  sendResponse(res, {
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok
+      ? 'Trending Products Fetched Successfully'
+      : 'Trending Products Fetching Failed',
+    Data: isok ? result : [],
+  });
+});
+
 export const ProductController = {
   createProduct,
   getAllProducts,
@@ -163,4 +176,5 @@ export const ProductController = {
   updateProduct,
   deleteProduct,
   getAllProductsAdmin,
+  getTrendingProducts,
 };

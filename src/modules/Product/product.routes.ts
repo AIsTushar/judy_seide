@@ -25,4 +25,6 @@ router.delete(
   ProductController.deleteProduct,
 );
 
+router.get('/get-trending-products', ProductController.getTrendingProducts);
+
 export const ProductRoutes = router;
