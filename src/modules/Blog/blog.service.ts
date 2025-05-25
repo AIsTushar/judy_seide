@@ -18,11 +18,16 @@ const createBlog = async (payload: IBlog) => {
   return result;
 };
 
+// Get all blog for normal user
 const getAllBlogs = async (queryParams: Record<string, unknown>) => {
   const queryBuilder = new PrismaQueryBuilder(queryParams, [
     'title',
     'content',
   ]);
+
+  // Add isPublish filter to queryParams before building the query
+  queryParams.isPublish = true;
+
   const prismaQuery = queryBuilder
     .buildWhere()
     .buildSort()
@@ -32,7 +37,6 @@ const getAllBlogs = async (queryParams: Record<string, unknown>) => {
 
   const blogs = await prisma.blog.findMany({
     ...prismaQuery,
-    where: { isPublish: true },
     include: {
       user: {
         select: {

@@ -61,6 +61,9 @@ const createCheckoutSession = catchAsync(async (req, res) => {
     customer_email: user?.email,
     success_url: `${config.client_url}/success`,
     cancel_url: `${config.client_url}/cancel`,
+    phone_number_collection: {
+      enabled: true,
+    },
     line_items,
     metadata: {
       userId,

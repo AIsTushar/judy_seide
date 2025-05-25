@@ -34,7 +34,7 @@ model Category {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   name      String    @unique
   imageUrl  String
-  published Boolean
+  published Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Product   Product[]
@@ -84,6 +84,7 @@ model Order {
   email      String
   address    String
   amount     Float
+  phone      String?
   isPaid     Boolean
   cartItems  Json
   status     OrderStatus @default(PROCESSING)

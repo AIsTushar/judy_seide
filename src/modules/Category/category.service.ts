@@ -27,6 +27,7 @@ const createCategory = async (payload: ICategory) => {
 
 const getAllCategories = async (queryParams: Record<string, unknown>) => {
   const queryBuilder = new PrismaQueryBuilder(queryParams, ['name']);
+  queryParams.published = true;
   const prismaQuery = queryBuilder
     .buildWhere()
     .buildSort()
@@ -35,7 +36,6 @@ const getAllCategories = async (queryParams: Record<string, unknown>) => {
     .getQuery();
   const categories = await prisma.category.findMany({
     ...prismaQuery,
-    where: { published: true },
   });
 
   const meta = await queryBuilder.getPaginationMeta(prisma.category);

@@ -86,6 +86,13 @@ const updateUser = async (id: string, data: any) => {
       id,
     },
     data,
+    select: {
+      name: true,
+      email: true,
+      contact: true,
+      imageUrl: true,
+      address: true,
+    },
   });
   return result;
 };
