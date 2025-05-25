@@ -1,3 +1,4 @@
+import { PrismaQueryBuilder } from '../../builder/QueryBuilder';
 import AppError from '../../errors/AppError';
 import { prisma } from '../../prisma/client';
 import { IReview } from './review.interface';
@@ -39,4 +40,90 @@ const createReview = async (id: string, payload: IReview) => {
   return result;
 };
 
-export const ReviewServices = { createReview };
+const getAllReviews = async (queryParams: Record<string, unknown>) => {
+  const queryBuilder = new PrismaQueryBuilder(queryParams, [
+    'title',
+    'comment',
+  ]);
+
+  const prismaQuery = queryBuilder
+    .buildWhere()
+    .buildSort()
+    .buildPagination()
+    .buildSelect()
+    .getQuery();
+
+  // Merge additional filter (isPublish: true) without overriding existing filters
+  prismaQuery.where = {
+    ...prismaQuery.where,
+    isPublished: true,
+  };
+
+  // Perform query with merged filters and includes
+  const reviews = await prisma.review.findMany({
+    ...prismaQuery,
+  });
+
+  // Meta calculation
+  const meta = await queryBuilder.getPaginationMeta(prisma.review);
+
+  return {
+    meta,
+    data: reviews,
+  };
+};
+
+const getAllReviewsAdmin = async (queryParams: Record<string, unknown>) => {
+  const queryBuilder = new PrismaQueryBuilder(queryParams, [
+    'title',
+    'comment',
+  ]);
+
+  const prismaQuery = queryBuilder
+    .buildWhere()
+    .buildSort()
+    .buildPagination()
+    .buildSelect()
+    .getQuery();
+
+  // Merge additional filter (isPublish: true) without overriding existing filters
+  prismaQuery.where = {
+    ...prismaQuery.where,
+  };
+
+  // Perform query with merged filters and includes
+  const reviews = await prisma.review.findMany({
+    ...prismaQuery,
+    include: {
+      user: {
+        select: {
+          name: true,
+          imageUrl: true,
+        },
+      },
+    },
+  });
+
+  // Meta calculation
+  const meta = await queryBuilder.getPaginationMeta(prisma.review);
+
+  return {
+    meta,
+    data: reviews,
+  };
+};
+
+const updateReview = async (id: string, payload: IReview) => {
+  const result = await prisma.review.update({
+    where: { id },
+    data: payload,
+  });
+  return result;
+};
+
+export const ReviewServices = {
+  createReview,
+  getAllReviews,
+  getAllReviewsAdmin,
+  updateReview,
+};
