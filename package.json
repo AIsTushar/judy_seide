@@ -6,7 +6,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "nodemon dist/server.js",
-    "generate": "prisma postinstall --schema=src/prisma/schema.prisma"
+    "postinstall": "prisma generate --schema=src/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",

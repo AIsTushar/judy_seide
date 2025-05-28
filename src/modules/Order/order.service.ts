@@ -4,7 +4,7 @@ import { prisma } from '../../prisma/client';
 const getAllOrders = async (queryParams: Record<string, unknown>) => {
   const { searchTerm, status, ...rest } = queryParams;
 
-  const queryBuilder = new PrismaQueryBuilder(rest, ['title', 'content']); // Leave builder as-is
+  const queryBuilder = new PrismaQueryBuilder(rest, ['title', 'content']);
 
   const prismaQuery = queryBuilder
     .buildWhere()
