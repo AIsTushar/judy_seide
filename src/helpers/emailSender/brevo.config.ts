@@ -32,8 +32,8 @@ export async function sendEmail(
 
   const payload = {
     sender: {
-      name: 'Jakuan Ahmed',
-      email: 'jakuanultimate777@gmail.com',
+      name: 'Judy Seide',
+      email: 'azizultushar98@gmail.com',
     },
     to,
     subject,
@@ -48,6 +48,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
     });
+    return response.data;
   } catch (error: any) {
     if (error.response) {
     } else {

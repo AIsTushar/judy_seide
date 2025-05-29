@@ -222,6 +222,19 @@ const getUserOrders = async (
   };
 };
 
+const updateOrderStatus = async (
+  orderId: string,
+  payload: Record<string, unknown>,
+) => {
+  await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: payload,
+  });
+  return true;
+};
+
 const getMyOrders = async (
   userId: string,
   queryParams: Record<string, unknown>,
@@ -324,6 +337,7 @@ const getMyOrder = async (userId: string, orderId: string) => {
 export const OrderServices = {
   getAllOrders,
   getUserOrders,
+  updateOrderStatus,
   getMyOrders,
   getMyOrder,
 };

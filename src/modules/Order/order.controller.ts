@@ -24,6 +24,19 @@ const getUserOrders = catchAsync(async (req, res) => {
   });
 });
 
+const updateOrderStatus = catchAsync(async (req, res) => {
+  const result = await OrderServices.updateOrderStatus(req.params.id, req.body);
+  const isok = result ? true : false;
+  res.status(isok ? 200 : 400).json({
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok
+      ? 'Order Status Updated Successfully'
+      : 'Order Status Updating Failed',
+    Data: isok ? result : [],
+  });
+});
+
 const getMyOrders = catchAsync(async (req, res) => {
   const userId = req.user.id;
   const result = await OrderServices.getMyOrders(userId, req.query);
@@ -53,6 +66,7 @@ const getMyOrderByID = catchAsync(async (req, res) => {
 export const OrderController = {
   getAllOrders,
   getUserOrders,
+  updateOrderStatus,
   getMyOrders,
   getMyOrderByID,
 };

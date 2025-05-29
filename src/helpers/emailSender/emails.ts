@@ -76,6 +76,8 @@ export const sendFeedbackEmail = async (
     template,
   );
 
+  console.log(`see response`, response);
+
   return response;
 };
 
