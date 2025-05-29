@@ -19,6 +19,10 @@ const createCategory = catchAsync(async (req, res) => {
     imageUrl = uploadResult.location;
   }
 
+  if (req.body.published && typeof req.body.published === 'string') {
+    req.body.published = req.body.published === 'true' ? true : false;
+  }
+
   const categoryData: ICategory = {
     ...req.body,
     imageUrl,
