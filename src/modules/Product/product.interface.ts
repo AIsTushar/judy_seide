@@ -6,6 +6,7 @@ export interface IProduct {
   tags: string[];
   size: string;
   quantity: number;
+  published: boolean;
   materialId: string;
   categoryId: string;
 }

@@ -26,6 +26,10 @@ const createProduct = catchAsync(async (req, res) => {
   const uploadResults = await Promise.all(uploadPromises);
   const imageUrls = uploadResults.map((upload) => upload.location);
 
+  if (req.body.published && typeof req.body.published === 'string') {
+    req.body.published = req.body.published === 'true' ? true : false;
+  }
+
   const productPayload = {
     ...req.body,
     imageUrl: imageUrls,
@@ -36,6 +40,8 @@ const createProduct = catchAsync(async (req, res) => {
         ? req.body.tags.split(',')
         : req.body.tags,
   };
+
+  console.log(productPayload);
 
   const createdProduct = await ProductServices.createProduct(productPayload);
 
@@ -99,10 +105,10 @@ const updateProduct = catchAsync(async (req, res) => {
     tags,
     materialId,
     categoryId,
-    published,
   } = req.body;
 
   let imageUrlsToKeep = [];
+  let published = req.body.published;
   if (req.body.imageUrlsToKeep) {
     try {
       imageUrlsToKeep =
@@ -126,6 +132,10 @@ const updateProduct = catchAsync(async (req, res) => {
     newImageUrls = (await Promise.all(uploadPromises)).map(
       (upload) => upload.location,
     );
+  }
+
+  if (req.body.published && typeof req.body.published === 'string') {
+    published = req.body.published === 'true' ? true : false;
   }
 
   const updatePayload = {

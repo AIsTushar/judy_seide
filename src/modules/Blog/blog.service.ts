@@ -12,6 +12,7 @@ const createBlog = async (payload: IBlog) => {
       content: payload.content,
       imageUrl: payload.imageUrl,
       others: payload.others,
+      isPublish: payload.isPublish,
     },
   });
 

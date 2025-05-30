@@ -17,6 +17,7 @@ const createProduct = async (payload: IProduct) => {
       tags: payload.tags,
       materialId: payload.materialId,
       categoryId: payload.categoryId,
+      published: payload.published,
     },
   });
 

@@ -20,6 +20,10 @@ const createBlog = catchAsync(async (req, res) => {
     imageUrl = uploadResult.location;
   }
 
+  if (req.body.isPublish && typeof req.body.isPublish === 'string') {
+    req.body.isPublish = req.body.isPublish === 'true' ? true : false;
+  }
+
   const blogData: IBlog = {
     ...req.body,
     userId: user.id,
@@ -79,6 +83,10 @@ const updateBlog = catchAsync(async (req, res) => {
 
   if (!existingBlog) {
     throw new AppError(404, 'Blog not found');
+  }
+
+  if (req.body.isPublish && typeof req.body.isPublish === 'string') {
+    req.body.isPublish = req.body.isPublish === 'true' ? true : false;
   }
 
   let updatedData = { ...req.body };
