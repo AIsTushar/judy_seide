@@ -60,7 +60,10 @@ const handleCheckoutSessionCompleted = async (session: any) => {
         where: { id: item.productId },
         data: {
           quantity: {
-            decrement: item.quantity, // decrement quantity by ordered amount
+            decrement: item.quantity,
+          },
+          salesCount: {
+            increment: item.quantity,
           },
         },
       });

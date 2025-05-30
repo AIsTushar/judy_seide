@@ -61,6 +61,7 @@ model Product {
   size        String
   quantity    Int
   tags        String[]
+  salesCount  Int      @default(0)
   published   Boolean  @default(false)
   materialId  String   @db.ObjectId
   categoryId  String   @db.ObjectId
