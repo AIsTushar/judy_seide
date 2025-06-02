@@ -111,13 +111,32 @@ const getAllProducts = async (queryParams: Record<string, unknown>) => {
     material: true,
   };
 
-  // --- Execute query ---
   const data = await prisma.product.findMany(prismaQuery);
   const meta = await builder.getPaginationMeta(prisma.product);
 
+  // Calculate flags
+  const now = new Date();
+  const isNewArrival = (date: Date) => {
+    const daysOld = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+    return daysOld <= 7;
+  };
+
+  // Get top 10 best sellers from filtered dataset (optional: get from full db if needed)
+  const topSellers = [...data]
+    .sort((a, b) => b.salesCount - a.salesCount)
+    .slice(0, 5)
+    .map((p) => p.id);
+
+  // Annotate
+  const annotatedData = data.map((product) => ({
+    ...product,
+    isBestSeller: topSellers.includes(product.id),
+    isNewArrival: isNewArrival(new Date(product.createdAt)),
+  }));
+
   return {
     meta,
-    data,
+    data: annotatedData,
   };
 };
 

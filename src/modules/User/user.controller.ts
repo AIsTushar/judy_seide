@@ -56,7 +56,7 @@ const updateUser = catchAsync(async (req, res) => {
   }
 
   const { name, contact, address } = req.body;
-  let imageUrl = '';
+  let imageUrl = user.imageUrl;
 
   if (req.file) {
     if (user.imageUrl) {
