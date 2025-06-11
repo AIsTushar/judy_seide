@@ -22,6 +22,7 @@ const getAllUsers = async (
   // Ensure select fields fallback if not defined by client
   if (!prismaQuery.select) {
     prismaQuery.select = {
+      id: true,
       name: true,
       email: true,
       contact: true,
