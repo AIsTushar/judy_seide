@@ -334,10 +334,53 @@ const getMyOrder = async (userId: string, orderId: string) => {
   };
 };
 
+const getAllCustomers = async (queryParams: Record<string, unknown>) => {
+  const searchableFields = ['name'];
+
+  const queryBuilder = new PrismaQueryBuilder(queryParams, searchableFields)
+    .buildWhere()
+    .buildSort()
+    .buildPagination()
+    .buildSelect();
+
+  const prismaQuery = queryBuilder.getQuery();
+
+  // Inject fixed condition: users who placed at least one order
+  prismaQuery.where = {
+    ...prismaQuery.where,
+    role: 'USER',
+    Order: {
+      some: {},
+    },
+  };
+
+  // Add default selection if not provided
+  if (!prismaQuery.select) {
+    prismaQuery.select = {
+      id: true,
+      name: true,
+      email: true,
+      contact: true,
+      address: true,
+      imageUrl: true,
+      createdAt: true,
+    };
+  }
+
+  const customers = await prisma.user.findMany(prismaQuery);
+  const meta = await queryBuilder.getPaginationMeta(prisma.user);
+
+  return {
+    meta,
+    data: customers,
+  };
+};
+
 export const OrderServices = {
   getAllOrders,
   getUserOrders,
   updateOrderStatus,
   getMyOrders,
   getMyOrder,
+  getAllCustomers,
 };

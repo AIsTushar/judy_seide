@@ -63,10 +63,24 @@ const getMyOrderByID = catchAsync(async (req, res) => {
   });
 });
 
+const getAllCustomers = catchAsync(async (req, res) => {
+  const result = await OrderServices.getAllCustomers(req.query);
+  const isok = result ? true : false;
+  res.status(isok ? 200 : 400).json({
+    statusCode: isok ? 200 : 400,
+    success: isok ? true : false,
+    message: isok
+      ? 'Customers Fetched Successfully'
+      : 'Customers Fetching Failed',
+    Data: isok ? result : [],
+  });
+});
+
 export const OrderController = {
   getAllOrders,
   getUserOrders,
   updateOrderStatus,
   getMyOrders,
   getMyOrderByID,
+  getAllCustomers,
 };

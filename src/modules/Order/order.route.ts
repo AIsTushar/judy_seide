@@ -9,6 +9,11 @@ router.patch(
   auth('ADMIN'),
   OrderController.updateOrderStatus,
 );
+router.get(
+  '/get-all-customers',
+  auth('ADMIN'),
+  OrderController.getAllCustomers,
+);
 router.get('/get-user-orders/:id', OrderController.getUserOrders);
 router.get('/my-orders', auth('USER'), OrderController.getMyOrders);
 router.get('/my-orders/:id', auth('USER'), OrderController.getMyOrderByID);

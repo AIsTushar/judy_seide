@@ -105,4 +105,30 @@ const webhook = catchAsync(async (req, res) => {
   res.status(200).json({ status: 'success' });
 });
 
-export const PaymentController = { createCheckoutSession, webhook };
+const getAllPaymentHistory = catchAsync(async (req, res) => {
+  // const userId = req.user.id;
+  // const payments = await prisma.payment.findMany({
+  //   where: {
+  //     userId,
+  //   },
+  //   include: {
+  //     user: true,
+  //     products: true,
+  //   },
+  //   orderBy: {
+  //     createdAt: 'desc',
+  //   },
+  // });
+  // sendResponse(res, {
+  //   statusCode: 200,
+  //   success: true,
+  //   message: 'Payment history retrieved successfully',
+  //   Data: payments,
+  // });
+});
+
+export const PaymentController = {
+  createCheckoutSession,
+  webhook,
+  getAllPaymentHistory,
+};

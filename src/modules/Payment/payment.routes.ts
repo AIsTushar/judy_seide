@@ -8,6 +8,11 @@ router.post(
   auth('ADMIN', 'USER'),
   PaymentController.createCheckoutSession,
 );
+router.post(
+  '/get-all-payment-history',
+  auth('ADMIN'),
+  PaymentController.getAllPaymentHistory,
+);
 router.post('/webhook', PaymentController.webhook);
 
 export const PaymentRoutes = router;
